@@ -8,9 +8,12 @@
 #include <caml/fail.h>
 #include <caml/bigarray.h>
 
-#include <linux/i2c.h>
 #include <linux/i2c-dev.h>
 #include <sys/ioctl.h>
+
+#ifndef I2C_SMBUS_WRITE
+#include <linux/i2c.h>
+#endif
 
 __s32 ml_smbus(int fd, char rw, __u8 cmd,
                int size, union i2c_smbus_data *data) {
