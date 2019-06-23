@@ -16,7 +16,8 @@ module Command = struct
     | Io1
     | Io2
     | Io3
-    | Sonic
+    | Sonic1
+    | Sonic2
 
   let to_int = function
     | Servo1 -> 0
@@ -31,7 +32,8 @@ module Command = struct
     | Io1 -> 9
     | Io2 -> 10
     | Io3 -> 11
-    | Sonic -> 12
+    | Sonic1 -> 12
+    | Sonic2 -> 13
 end
 
 module Bot = struct
@@ -71,6 +73,13 @@ module Bot = struct
     in
     write_command t Pwm1 level;
     write_command t Pwm2 level
+
+  let get_sonic t =
+    B.write_byte t.bus (Command.to_int Sonic1);
+    let sonic1 = B.read_byte_data t.bus (Command.to_int Sonic1) in
+    B.write_byte t.bus (Command.to_int Sonic2);
+    let sonic2 = B.read_byte_data t.bus (Command.to_int Sonic2) in
+    (sonic1 * 256 + sonic2) * 17 / 1000
 end
 
 let () =

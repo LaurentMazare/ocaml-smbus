@@ -30,6 +30,11 @@ let read_byte t =
   Smbus_bindings.i2c_smbus_read_byte t.file_descr
   |> ensure_non_negative ~name:"i2c_smbus_read_byte"
 
+let read_byte_data t command =
+  ensure_not_closed t;
+	Smbus_bindings.i2c_smbus_read_byte_data t.file_descr command
+  |> ensure_non_negative ~name:"i2c_smbus_read_byte_data"
+
 let write_byte t v =
   ensure_not_closed t;
   Smbus_bindings.i2c_smbus_write_byte t.file_descr v
