@@ -2,6 +2,8 @@
  https://github.com/Freenove/Freenove_Three-wheeled_Smart_Car_Kit_for_Raspberry_Pi
 *)
 
+open Smbus
+
 module Command = struct
   type t =
     | Servo1
@@ -34,52 +36,53 @@ module Command = struct
     | Io3 -> 11
     | Sonic1 -> 12
     | Sonic2 -> 13
+
+  let to_int t = to_int t |> Uint8.of_int_exn
 end
 
 module Bot = struct
-  module B = Smbus.Bus
-
   type t =
-    { bus : B.t
+    { bus : Bus.t
     }
 
   let create () =
-    let bus = B.create 1 in
-    B.set_address bus 0x18 ~force:false;
+    let bus = Bus.create 1 in
+    Bus.set_address bus (Uint8.of_int_exn 0x18) ~force:false;
     { bus }
 
   let write_command t cmd v =
-    B.write_word_data t.bus (Command.to_int cmd) v
+    Bus.write_word_data t.bus (Command.to_int cmd) v
 
   let set_rgb t ~r ~g ~b =
-    write_command t Io1 r;
-    write_command t Io2 b;
-    write_command t Io3 g
+    write_command t Io1 (Uint16.of_int_exn r);
+    write_command t Io2 (Uint16.of_int_exn b);
+    write_command t Io3 (Uint16.of_int_exn g)
 
-  let set_buzzer t ~level = write_command t Buzzer level
+  let set_buzzer t ~level =
+    write_command t Buzzer (Uint16.of_int_exn level)
 
   let set_pwm t ~level =
     let level =
     if level < 0
     then begin
-      write_command t Dir1 0;
-      write_command t Dir2 0;
+      write_command t Dir1 Uint16.zero;
+      write_command t Dir2 Uint16.zero;
       - level
     end else begin
-      write_command t Dir1 1;
-      write_command t Dir2 1;
+      write_command t Dir1 Uint16.one;
+      write_command t Dir2 Uint16.one;
       level
     end
     in
-    write_command t Pwm1 level;
-    write_command t Pwm2 level
+    write_command t Pwm1 (Uint16.of_int_exn level);
+    write_command t Pwm2 (Uint16.of_int_exn level)
 
   let get_sonic t =
-    B.write_byte t.bus (Command.to_int Sonic1);
-    let sonic1 = B.read_byte_data t.bus (Command.to_int Sonic1) in
-    B.write_byte t.bus (Command.to_int Sonic2);
-    let sonic2 = B.read_byte_data t.bus (Command.to_int Sonic2) in
-    (sonic1 * 256 + sonic2) * 17 / 1000
+    Bus.write_byte t.bus (Command.to_int Sonic1);
+    let sonic1 = Bus.read_byte_data t.bus (Command.to_int Sonic1) in
+    Bus.write_byte t.bus (Command.to_int Sonic2);
+    let sonic2 = Bus.read_byte_data t.bus (Command.to_int Sonic2) in
+    float_of_int (Uint8.to_int sonic1 * 256 + Uint8.to_int sonic2) *. 17. /. 1000.
 end
 
 let () =
