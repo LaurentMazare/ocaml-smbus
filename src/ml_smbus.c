@@ -8,93 +8,124 @@
 #include <caml/fail.h>
 #include <caml/bigarray.h>
 
+#include <linux/i2c.h>
 #include <linux/i2c-dev.h>
-#include <i2c/smbus.h>
 #include <sys/ioctl.h>
 
-CAMLprim value ml_i2c_smbus_write_quick(value file, value v) {
-  CAMLparam2(file, v);
-  int r = i2c_smbus_write_quick(Int_val(file), Int_val(v));
-  if (r < 0) caml_failwith(strerror(errno));
-  CAMLreturn(Val_int(r));
+__s32 ml_smbus(int fd, char rw, __u8 cmd,
+               int size, union i2c_smbus_data *data) {
+    struct i2c_smbus_ioctl_data args;
+    args.read_write = rw;
+    args.command = cmd;
+    args.size = size;
+    args.data = data;
+
+    __s32 err;
+    return ioctl(fd, I2C_SMBUS, &args);
 }
 
-CAMLprim value ml_i2c_smbus_read_byte(value file) {
-  CAMLparam1(file);
-  int r = i2c_smbus_read_byte(Int_val(file));
-  if (r < 0) caml_failwith(strerror(errno));
-  CAMLreturn(Val_int(r));
+void ml_i2c_smbus_write_quick(value fd, value v) {
+  CAMLparam2(fd, v);
+  int r = ml_smbus(Int_val(fd), Int_val(v), 0, I2C_SMBUS_QUICK, NULL);
+  if (r == -1) caml_failwith(strerror(errno));
+  CAMLreturn0;
 }
 
-CAMLprim value ml_i2c_smbus_write_byte(value file, value v) {
-  CAMLparam2(file, v);
-  int r = i2c_smbus_write_byte(Int_val(file), Int_val(v));
-  if (r < 0) caml_failwith(strerror(errno));
-  CAMLreturn(Val_int(r));
+CAMLprim value ml_i2c_smbus_read_byte(value fd) {
+  CAMLparam1(fd);
+  union i2c_smbus_data data;
+  int r = ml_smbus(Int_val(fd), I2C_SMBUS_READ, 0, I2C_SMBUS_BYTE, &data);
+  if (r == -1) caml_failwith(strerror(errno));
+  CAMLreturn(Val_int(data.byte & 0x0FF));
 }
 
-CAMLprim value ml_i2c_smbus_read_byte_data(value file, value command) {
-  CAMLparam2(file, command);
-  int r = i2c_smbus_read_byte_data(Int_val(file), Int_val(command));
-  if (r < 0) caml_failwith(strerror(errno));
-  CAMLreturn(Val_int(r));
+void ml_i2c_smbus_write_byte(value fd, value v) {
+  CAMLparam2(fd, v);
+  int r = ml_smbus(Int_val(fd), I2C_SMBUS_WRITE, Int_val(v), I2C_SMBUS_BYTE, NULL);
+  if (r == -1) caml_failwith(strerror(errno));
+  CAMLreturn0;
 }
 
-CAMLprim value ml_i2c_smbus_write_byte_data(value file, value command, value v) {
-  CAMLparam3(file, command, v);
-  int r = i2c_smbus_write_byte_data(Int_val(file), Int_val(command), Int_val(v));
-  if (r < 0) caml_failwith(strerror(errno));
-  CAMLreturn(Val_int(r));
+CAMLprim value ml_i2c_smbus_read_byte_data(value fd, value cmd) {
+  CAMLparam2(fd, cmd);
+  union i2c_smbus_data data;
+  int r = ml_smbus(Int_val(fd), I2C_SMBUS_READ, Int_val(cmd), I2C_SMBUS_BYTE_DATA, &data);
+  if (r == -1) caml_failwith(strerror(errno));
+  CAMLreturn(Val_int(data.byte & 0x0FF));
 }
 
-CAMLprim value ml_i2c_smbus_read_word_data(value file, value command) {
-  CAMLparam2(file, command);
-  int r = i2c_smbus_read_word_data(Int_val(file), Int_val(command));
-  if (r < 0) caml_failwith(strerror(errno));
-  CAMLreturn(Val_int(r));
+void ml_i2c_smbus_write_byte_data(value fd, value cmd, value v) {
+  CAMLparam3(fd, cmd, v);
+  union i2c_smbus_data data;
+  data.byte = Int_val(v);
+  int r = ml_smbus(Int_val(fd), I2C_SMBUS_WRITE, Int_val(cmd), I2C_SMBUS_BYTE_DATA, &data);
+  if (r == -1) caml_failwith(strerror(errno));
+  CAMLreturn0;
 }
 
-CAMLprim value ml_i2c_smbus_write_word_data(value file, value command, value v) {
-  CAMLparam3(file, command, v);
-  int r = i2c_smbus_write_word_data(Int_val(file), Int_val(command), Int_val(v));
-  if (r < 0) caml_failwith(strerror(errno));
-  CAMLreturn(Val_int(r));
+CAMLprim value ml_i2c_smbus_read_word_data(value fd, value cmd) {
+  CAMLparam2(fd, cmd);
+  union i2c_smbus_data data;
+  int r = ml_smbus(Int_val(fd), I2C_SMBUS_READ, Int_val(cmd), I2C_SMBUS_WORD_DATA, &data);
+
+  if (r == -1) caml_failwith(strerror(errno));
+  CAMLreturn(Val_int(data.word & 0x0FFFF));
 }
 
-CAMLprim value ml_i2c_smbus_process_call(value file, value command, value v) {
-  CAMLparam3(file, command, v);
-  int r = i2c_smbus_process_call(Int_val(file), Int_val(command), Int_val(v));
-  if (r < 0) caml_failwith(strerror(errno));
-  CAMLreturn(Val_int(r));
+void ml_i2c_smbus_write_word_data(value fd, value cmd, value v) {
+  CAMLparam3(fd, cmd, v);
+  union i2c_smbus_data data;
+  data.word = Int_val(v);
+  int r = ml_smbus(Int_val(fd), I2C_SMBUS_WRITE, Int_val(cmd), I2C_SMBUS_WORD_DATA, &data);
+
+  if (r == -1) caml_failwith(strerror(errno));
+  CAMLreturn0;
 }
 
-CAMLprim value ml_i2c_smbus_read_i2c_block_data(value file, value command, value ba) {
-  CAMLparam3(file, command, ba);
+CAMLprim value ml_i2c_smbus_process_call(value fd, value cmd, value v) {
+  CAMLparam3(fd, cmd, v);
+  union i2c_smbus_data data;
+  data.word = Int_val(v);
+  int r = ml_smbus(Int_val(fd), I2C_SMBUS_WRITE, Int_val(cmd), I2C_SMBUS_PROC_CALL, &data);
+  if (r == -1) caml_failwith(strerror(errno));
+  CAMLreturn(Val_int(data.word & 0x0FFFF));
+}
+
+CAMLprim value ml_i2c_smbus_read_i2c_block_data(value fd, value cmd, value ba) {
+  CAMLparam3(fd, cmd, ba);
   size_t sz = caml_ba_byte_size(Caml_ba_array_val(ba));
-  if (sz >= 256) {
-    caml_invalid_argument("bigarray length has to be less than 256");
+  if (sz > I2C_SMBUS_BLOCK_MAX) {
+    caml_invalid_argument("bigarray larger than I2C_SMBUS_BLOCK_MAX");
   }
-  int r = i2c_smbus_read_i2c_block_data(Int_val(file), Int_val(command), sz, Caml_ba_data_val(ba));
+  union i2c_smbus_data data;
+  data.block[0] = sz;
+  int r = ml_smbus(Int_val(fd), I2C_SMBUS_READ, cmd, I2C_SMBUS_I2C_BLOCK_DATA, &data);
   if (r < 0) caml_failwith(strerror(errno));
-  CAMLreturn(Val_int(r));
+  __u8* vs = Caml_ba_data_val(ba);
+  for (int i = 1; i <= data.block[0]; ++i) vs[i-1] = data.block[i];
+  CAMLreturn(Val_int(data.block[0]));
 }
 
-CAMLprim value ml_i2c_smbus_write_i2c_block_data(value file, value command, value ba) {
-  CAMLparam3(file, command, ba);
+CAMLprim value ml_i2c_smbus_write_i2c_block_data(value fd, value cmd, value ba) {
+  CAMLparam3(fd, cmd, ba);
   size_t sz = caml_ba_byte_size(Caml_ba_array_val(ba));
-  if (sz >= 256) {
-    caml_invalid_argument("bigarray length has to be less than 256");
+  if (sz >= I2C_SMBUS_BLOCK_MAX) {
+    caml_invalid_argument("bigarray larger than I2C_SMBUS_BLOCK_MAX");
   }
-  int r = i2c_smbus_write_i2c_block_data(Int_val(file), Int_val(command), sz, Caml_ba_data_val(ba));
+  union i2c_smbus_data data;
+  data.block[0] = sz;
+  __u8* vs = Caml_ba_data_val(ba);
+  for (int i = 1; i <= sz; ++i) data.block[i] = vs[i-1];
+  int r = ml_smbus(Int_val(fd), I2C_SMBUS_WRITE, cmd, I2C_SMBUS_I2C_BLOCK_DATA, &data);
   if (r < 0) caml_failwith(strerror(errno));
   CAMLreturn(Val_int(r));
 }
 
-CAMLprim value ml_i2c_set_address(value file, value addr, value force) {
-  CAMLparam3(file, addr, force);
+void ml_i2c_set_address(value fd, value addr, value force) {
+  CAMLparam3(fd, addr, force);
   char address = Int_val(addr);
   unsigned long op = Bool_val(force) ? I2C_SLAVE_FORCE : I2C_SLAVE;
-  int r = ioctl(Int_val(file), op, address);
-  if (r < 0) caml_failwith(strerror(errno));
-  CAMLreturn(Val_int(r));
+  int r = ioctl(Int_val(fd), op, address);
+  if (r == -1) caml_failwith(strerror(errno));
+  CAMLreturn0;
 }

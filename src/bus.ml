@@ -20,10 +20,6 @@ let ensure_not_closed t =
   if t.closed
   then failwith "bus has already been closed"
 
-let ensure_zero err_code ~name =
-  if err_code <> 0
-  then Printf.sprintf "non-zero return %d from %s" err_code name |> failwith
-
 let ensure_non_negative res ~name =
   if res < 0
   then Printf.sprintf "negative return %d from %s" res name |> failwith;
@@ -37,17 +33,14 @@ let read_byte t =
 let write_byte t v =
   ensure_not_closed t;
   Smbus_bindings.i2c_smbus_write_byte t.file_descr v
-  |> ensure_zero ~name:"i2c_smbus_write_byte"
 
 let set_address t v ~force =
   ensure_not_closed t;
 	Smbus_bindings.i2c_set_address t.file_descr v force
-  |> ensure_zero ~name:"i2c_set_address"
 
 let write_word_data t command v =
   ensure_not_closed t;
 	Smbus_bindings.i2c_smbus_write_word_data t.file_descr command v
-  |> ensure_zero ~name:"i2c_smbus_write_word_data"
 
 let close t =
   Unix.close t.file_descr;
