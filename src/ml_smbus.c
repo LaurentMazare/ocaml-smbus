@@ -92,9 +92,9 @@ CAMLprim value ml_i2c_smbus_write_i2c_block_data(value file, value command, valu
 
 CAMLprim value ml_i2c_set_address(value file, value addr, value force) {
   CAMLparam3(file, addr, force);
-  char address = Int_val(address);
+  char address = Int_val(addr);
   unsigned long op = Bool_val(force) ? I2C_SLAVE_FORCE : I2C_SLAVE;
-  int r = ioctl(Int_val(file), op, &address);
+  int r = ioctl(Int_val(file), op, address);
   if (r < 0) caml_failwith(strerror(errno));
   CAMLreturn(Val_int(r));
 }

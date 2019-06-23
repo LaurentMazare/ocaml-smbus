@@ -4,5 +4,7 @@ type t
 val create : int -> t
 val close : t -> unit
 
+val set_address : t -> int -> force:bool -> unit
 val read_byte : t -> int
-val write_byte : t -> int -> int
+val write_byte : t -> int -> unit
+val write_word_data : t -> int -> int -> unit
