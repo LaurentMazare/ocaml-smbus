@@ -1,0 +1,6 @@
+(library
+  (name smbus)
+  (public_name smbus)
+  (c_names ml_smbus)
+  (c_library_flags :standard)
+  (libraries bigarray))

@@ -1,0 +1,32 @@
+opam-version: "2.0"
+name:         "smbus"
+bug-reports:  "https://github.com/LaurentMazare/ocaml-smbus/issues"
+homepage:     "https://github.com/LaurentMazare/ocaml-smbus"
+dev-repo:     "git+https://github.com/LaurentMazare/ocaml-smbus.git"
+maintainer:   "Laurent Mazare <lmazare@gmail.com>"
+authors:      [ "Laurent Mazare" ]
+
+version: "dev"
+
+build: [["dune" "build" "-p" name "-j" jobs]]
+install: []
+remove:  []
+
+run-test: [
+  ["dune" "runtest" "-p" name "-j" jobs]
+]
+
+depends: [
+  "dune" {>= "1.3.0" build}
+  "ocaml" {>= "4.07"}
+]
+
+depopts: [
+]
+
+conflicts: [
+]
+
+available: os = "linux"
+
+synopsis: "smbus interface for ocaml"
