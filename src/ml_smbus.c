@@ -102,7 +102,7 @@ CAMLprim value ml_i2c_smbus_read_i2c_block_data(value fd, value cmd, value ba) {
   }
   union i2c_smbus_data data;
   data.block[0] = sz;
-  int r = ml_smbus(Int_val(fd), I2C_SMBUS_READ, cmd, I2C_SMBUS_I2C_BLOCK_DATA, &data);
+  int r = ml_smbus(Int_val(fd), I2C_SMBUS_READ, Int_val(cmd), I2C_SMBUS_I2C_BLOCK_DATA, &data);
   if (r < 0) caml_failwith(strerror(errno));
   __u8* vs = Caml_ba_data_val(ba);
   for (int i = 1; i <= data.block[0]; ++i) vs[i-1] = data.block[i];
@@ -119,9 +119,21 @@ CAMLprim value ml_i2c_smbus_write_i2c_block_data(value fd, value cmd, value ba) 
   data.block[0] = sz;
   __u8* vs = Caml_ba_data_val(ba);
   for (int i = 1; i <= sz; ++i) data.block[i] = vs[i-1];
-  int r = ml_smbus(Int_val(fd), I2C_SMBUS_WRITE, cmd, I2C_SMBUS_I2C_BLOCK_DATA, &data);
+  int r = ml_smbus(Int_val(fd), I2C_SMBUS_WRITE, Int_val(cmd), I2C_SMBUS_I2C_BLOCK_DATA, &data);
   if (r < 0) caml_failwith(strerror(errno));
   CAMLreturn(Val_int(r));
+}
+
+void ml_i2c_smbus_write_block_data2(value fd, value cmd, value v) {
+  CAMLparam3(fd, cmd, v);
+  union i2c_smbus_data data;
+  int w = Int_val(v);
+  data.block[0] = 2;
+  data.block[1] = w >> 8;
+  data.block[2] = w & 0x0FF;
+  int r = ml_smbus(Int_val(fd), I2C_SMBUS_WRITE, Int_val(cmd), I2C_SMBUS_I2C_BLOCK_DATA, &data);
+  if (r == -1) caml_failwith(strerror(errno));
+  CAMLreturn0;
 }
 
 void ml_i2c_set_address(value fd, value addr, value force) {

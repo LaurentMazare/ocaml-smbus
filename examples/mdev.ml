@@ -51,7 +51,8 @@ module Bot = struct
     { bus }
 
   let write_command t cmd v =
-    Bus.write_word_data t.bus (Command.to_int cmd) v
+    Bus.write_byte t.bus (Command.to_int cmd);
+    Bus.write_block_data2 t.bus (Command.to_int cmd) v
 
   let set_rgb t ~r ~g ~b =
     write_command t Io1 (Uint16.of_int_exn r);
@@ -83,6 +84,17 @@ module Bot = struct
     Bus.write_byte t.bus (Command.to_int Sonic2);
     let sonic2 = Bus.read_byte_data t.bus (Command.to_int Sonic2) in
     float_of_int (Uint8.to_int sonic1 * 256 + Uint8.to_int sonic2) *. 17. /. 1000.
+
+  let set_servo t cmd v =
+    if v < 0. || v > 1.
+    then raise (Invalid_argument "v has to be between 0 and 1");
+    (* The value has to be between 500 and 2500. *)
+    let v = 500. +. 2000. *. v in
+    write_command t cmd (int_of_float v |> Uint16.of_int_exn)
+
+  let set_servo1 t v = set_servo t Servo1 v
+  let set_servo2 t v = set_servo t Servo2 v
+  let set_servo3 t v = set_servo t Servo3 v
 end
 
 let () =
@@ -92,6 +104,7 @@ let () =
     | [| _ |] | [| _; "blink" |] -> `blink
     | [| _; "buzzer" |] -> `buzzer
     | [| _; "forward" |] -> `forward
+    | [| _; "sonic-scan" |] -> `sonic_scan
     | _ -> failwith "usage: mdev.exe blink|buzzer|forward|..."
   in
   match cmd with
@@ -111,3 +124,12 @@ let () =
       Bot.set_pwm bot ~level:1000;
       Unix.sleep 1;
       Bot.set_pwm bot ~level:0
+  | `sonic_scan ->
+      Bot.set_rgb bot ~r:0 ~g:1 ~b:1;
+      for d = 0 to 100 do
+        Bot.set_servo2 bot (float_of_int d /. 100.);
+        let sonic = Bot.get_sonic bot in
+        Printf.printf "%2d %f\n%!" d sonic;
+        Unix.sleepf 0.04;
+      done;
+      Bot.set_rgb bot ~r:1 ~g:1 ~b:1

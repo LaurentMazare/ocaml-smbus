@@ -20,4 +20,7 @@ external i2c_smbus_read_i2c_block_data : fd -> u8 -> int8 buffer -> int
 external i2c_smbus_write_i2c_block_data : fd -> u8 -> int8 buffer -> int
   = "ml_i2c_smbus_write_i2c_block_data"
 
+external i2c_smbus_write_block_data2 : fd -> u8 -> u16 -> unit
+  = "ml_i2c_smbus_write_block_data2"
+
 external i2c_set_address : fd -> u8 -> bool -> unit = "ml_i2c_set_address"

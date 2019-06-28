@@ -48,6 +48,10 @@ let write_word_data t command v =
   ensure_not_closed t;
 	Smbus_bindings.i2c_smbus_write_word_data t.file_descr command v
 
+let write_block_data2 t command v =
+  ensure_not_closed t;
+	Smbus_bindings.i2c_smbus_write_block_data2 t.file_descr command v
+
 let close t =
   Unix.close t.file_descr;
   t.closed <- true

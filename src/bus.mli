@@ -14,3 +14,4 @@ val read_word_data : t -> u8 -> u16
 val write_byte : t -> u8 -> unit
 val write_byte_data : t -> u8 -> u8 -> unit
 val write_word_data : t -> u8 -> u16 -> unit
+val write_block_data2 : t -> u8 -> u16 -> unit
