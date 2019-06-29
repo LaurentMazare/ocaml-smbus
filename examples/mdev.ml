@@ -104,6 +104,8 @@ let () =
     | [| _ |] | [| _; "blink" |] -> `blink
     | [| _; "buzzer" |] -> `buzzer
     | [| _; "forward" |] -> `forward
+    | [| _; "servo" |] -> `servo
+    | [| _; "sonic" |] -> `sonic
     | [| _; "sonic-scan" |] -> `sonic_scan
     | _ -> failwith "usage: mdev.exe blink|buzzer|forward|..."
   in
@@ -124,12 +126,25 @@ let () =
       Bot.set_pwm bot ~level:1000;
       Unix.sleep 1;
       Bot.set_pwm bot ~level:0
+  | `servo ->
+      for d = 0 to 100 do
+        Bot.set_servo1 bot (float_of_int d /. 100.);
+        Unix.sleepf 0.01;
+      done;
+      Bot.set_servo1 bot 0.5;
+  | `sonic ->
+      for d = 0 to 25 do
+        let sonic = Bot.get_sonic bot in
+        Printf.printf "%2d %f\n%!" d sonic;
+        Unix.sleepf 0.04;
+      done
   | `sonic_scan ->
       Bot.set_rgb bot ~r:0 ~g:1 ~b:1;
       for d = 0 to 100 do
         Bot.set_servo2 bot (float_of_int d /. 100.);
         let sonic = Bot.get_sonic bot in
         Printf.printf "%2d %f\n%!" d sonic;
-        Unix.sleepf 0.04;
+        Unix.sleepf 0.01;
       done;
+      Bot.set_servo2 bot 0.5;
       Bot.set_rgb bot ~r:1 ~g:1 ~b:1
