@@ -1,3 +1,15 @@
 (executables
-  (names mdev)
-  (libraries smbus))
+  (names mdev_test)
+  (modules mdev_test)
+  (libraries base mdev))
+
+(executables
+  (names mdev_corridor)
+  (modules mdev_corridor)
+  (preprocess (pps ppx_let))
+  (libraries async base mdev))
+
+(library
+  (name mdev)
+  (modules mdev)
+  (libraries base smbus))
