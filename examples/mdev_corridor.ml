@@ -46,6 +46,7 @@ end = struct
 end
 
 let run () =
+  let stop = Ivar.create () in
   let mdev = Mdev.create () in
   let sonic_scan = Sonic_scan.create mdev ~angles:[0.4; 0.5; 0.6] in
   Clock_ns.every' (Time_ns.Span.of_sec 0.5) (fun () ->
@@ -55,9 +56,27 @@ let run () =
       | [ x; y; z ] -> x, y, z
       | _ -> assert false
     in
-    Core.printf "%f %f %f\n%!" left_dist center_dist right_dist
+    Core.printf "%f %f %f\n%!" left_dist center_dist right_dist;
+    let action =
+      if Float.(<) center_dist 20.
+      then `stop
+      else if Float.(>) center_dist 100.
+      then `forward
+      else if Float.(<) right_dist left_dist
+      then `forward_turn 0.6
+      else `forward_turn 0.4
+    in
+    match action with
+    | `stop ->
+      Mdev.set_pwm mdev ~level:0;
+      Ivar.fill_if_empty stop ()
+    | `forward ->
+      Mdev.set_pwm mdev ~level:1000
+    | `forward_turn angle ->
+      Mdev.set_pwm mdev ~level:700;
+      Mdev.set_servo1 mdev angle
   );
-  Deferred.never ()
+  Ivar.read stop
 
 let () =
   Async.Command.async ~summary:"An echo server"
