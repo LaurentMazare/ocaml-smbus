@@ -1,6 +1,18 @@
 open Core
 open Async
 
+let debug = true
+
+module Mdev = struct
+  include Mdev
+
+  let set_pwm t ~level =
+    if debug then Core.printf "set-pwm %d\n%!" level else set_pwm t ~level
+
+  let set_servo1 t angle =
+    if debug then Core.printf "set-servo1 %f\n%!" angle else set_servo1 t angle
+end
+
 module Sonic_scan : sig
   type t
 
