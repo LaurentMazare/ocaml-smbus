@@ -86,7 +86,8 @@ let run () =
       | `forward_turn angle ->
         Mdev.set_pwm mdev ~level:700;
         Mdev.set_servo1 mdev angle);
-  Ivar.read stop
+  let%map () = Ivar.read stop in
+  Mdev.set_rgb mdev ~r:1 ~g:1 ~b:1
 
 let () =
   Async.Command.async ~summary:"An echo server" (Async.Command.Param.return run)
