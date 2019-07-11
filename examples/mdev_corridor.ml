@@ -21,7 +21,7 @@ module Sonic_scan : sig
     -> angles:float list
     -> refresh_rate:Time_ns.Span.t
     -> stop:unit Ivar.t
-    -> t
+    -> t Deferred.t
 
   val distances : t -> float list
 end = struct
@@ -31,6 +31,12 @@ end = struct
     ; angles : float list
     }
 
+  let refresh t =
+    Deferred.List.iteri t.angles ~f:(fun i angle ->
+        Mdev.set_servo2 t.mdev angle;
+        let%map () = after (Time.Span.of_sec 0.05) in
+        t.distances.(i) <- Mdev.get_sonic t.mdev)
+
   let create_and_start mdev ~angles ~refresh_rate ~stop =
     if not (List.is_sorted angles ~compare:Float.compare)
     then raise (Invalid_argument "angles has to be sorted");
@@ -39,11 +45,8 @@ end = struct
     let t =
       { mdev; distances = Array.create ~len:(List.length angles) Float.nan; angles }
     in
-    Clock_ns.every' refresh_rate ~stop:(Ivar.read stop) (fun () ->
-        Deferred.List.iteri angles ~f:(fun i angle ->
-            Mdev.set_servo2 t.mdev angle;
-            let%map () = after (Time.Span.of_sec 0.05) in
-            t.distances.(i) <- Mdev.get_sonic t.mdev));
+    let%map () = refresh t in
+    Clock_ns.every' refresh_rate ~stop:(Ivar.read stop) (fun () -> refresh t);
     t
 
   let distances t = Array.to_list t.distances
@@ -52,7 +55,7 @@ end
 let run () =
   let stop = Ivar.create () in
   let mdev = Mdev.create () in
-  let sonic_scan =
+  let%bind sonic_scan =
     Sonic_scan.create_and_start
       mdev
       ~angles:[ 0.4; 0.5; 0.6 ]
