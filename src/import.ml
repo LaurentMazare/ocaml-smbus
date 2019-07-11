@@ -12,14 +12,12 @@ module Uint8 : UintS = struct
 
   let of_int_exn int =
     if int < 0 || int > 255
-    then begin
+    then (
       let msg = Printf.sprintf "out of bounds %d" int in
-      raise (Invalid_argument msg);
-    end;
+      raise (Invalid_argument msg));
     int
 
   let to_int t = t
-
   let zero = 0
   let one = 1
 end
@@ -29,14 +27,12 @@ module Uint16 : UintS = struct
 
   let of_int_exn int =
     if int < 0 || int > 65536
-    then begin
+    then (
       let msg = Printf.sprintf "out of bounds %d" int in
-      raise (Invalid_argument msg);
-    end;
+      raise (Invalid_argument msg));
     int
 
   let to_int t = t
-
   let zero = 0
   let one = 1
 end

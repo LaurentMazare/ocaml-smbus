@@ -40,9 +40,7 @@ module Command = struct
   let to_int t = to_int t |> Uint8.of_int_exn
 end
 
-type t =
-  { bus : Bus.t
-  }
+type t = { bus : Bus.t }
 
 let create () =
   let bus = Bus.create 1 in
@@ -58,21 +56,19 @@ let set_rgb t ~r ~g ~b =
   write_command t Io2 (Uint16.of_int_exn b);
   write_command t Io3 (Uint16.of_int_exn g)
 
-let set_buzzer t ~level =
-  write_command t Buzzer (Uint16.of_int_exn level)
+let set_buzzer t ~level = write_command t Buzzer (Uint16.of_int_exn level)
 
 let set_pwm t ~level =
   let level =
-  if level < 0
-  then begin
-    write_command t Dir1 Uint16.zero;
-    write_command t Dir2 Uint16.zero;
-    - level
-  end else begin
-    write_command t Dir1 Uint16.one;
-    write_command t Dir2 Uint16.one;
-    level
-  end
+    if level < 0
+    then (
+      write_command t Dir1 Uint16.zero;
+      write_command t Dir2 Uint16.zero;
+      -level)
+    else (
+      write_command t Dir1 Uint16.one;
+      write_command t Dir2 Uint16.one;
+      level)
   in
   write_command t Pwm1 (Uint16.of_int_exn level);
   write_command t Pwm2 (Uint16.of_int_exn level)
@@ -82,18 +78,15 @@ let get_sonic t =
   let sonic1 = Bus.read_byte_data t.bus (Command.to_int Sonic1) in
   Bus.write_byte t.bus (Command.to_int Sonic2);
   let sonic2 = Bus.read_byte_data t.bus (Command.to_int Sonic2) in
-  float_of_int (Uint8.to_int sonic1 * 256 + Uint8.to_int sonic2) *. 17. /. 1000.
+  float_of_int ((Uint8.to_int sonic1 * 256) + Uint8.to_int sonic2) *. 17. /. 1000.
 
 let set_servo t cmd v =
-  if v < 0. || v > 1.
-  then raise (Invalid_argument "v has to be between 0 and 1");
+  if v < 0. || v > 1. then raise (Invalid_argument "v has to be between 0 and 1");
   (* The value has to be between 500 and 2500. *)
-  let v = 500. +. 2000. *. v in
+  let v = 500. +. (2000. *. v) in
   write_command t cmd (int_of_float v |> Uint16.of_int_exn)
 
 let set_servo1 t v = set_servo t Servo1 v
 let set_servo2 t v = set_servo t Servo2 v
 let set_servo3 t v = set_servo t Servo3 v
-
-let () =
-  ignore (Command.Servo4, ())
+let () = ignore (Command.Servo4, ())
