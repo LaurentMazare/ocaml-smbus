@@ -37,7 +37,7 @@ end = struct
         let%map () = after (Time.Span.of_sec 0.05) in
         let distance = Mdev.get_sonic t.mdev in
         Deque.enqueue_front t.distances.(i) distance;
-        if Deque.length t.distances.(i) > 3 then Deque.drop_front t.distances.(i))
+        if Deque.length t.distances.(i) > 5 then Deque.drop_back t.distances.(i))
 
   let create_and_start mdev ~angles ~refresh_rate ~stop =
     if not (List.is_sorted angles ~compare:Float.compare)
